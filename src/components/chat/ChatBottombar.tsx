@@ -3,12 +3,15 @@ import Image from "next/image";
 import { Image as ImageIcon } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { useState } from "react";
+import EmojiPicker from "./EmojiPicker";
 
 const ChatBottombar = () => {
-    const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("");
   return (
     <div className="p-2 flex justify-between w-full items-center gap-2">
-      {!message.trim() && <ImageIcon size={20} className="cursor-pointer text-muted-foreground" />}
+      {!message.trim() && (
+        <ImageIcon size={20} className="cursor-pointer text-muted-foreground" />
+      )}
       <AnimatePresence>
         <motion.div
           layout
@@ -32,6 +35,9 @@ const ChatBottombar = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
+          <div className="absolute right-2 bottom-0.5">
+            <EmojiPicker />
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>
