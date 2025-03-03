@@ -127,3 +127,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* rounded cool looking scrollbar */ 
+@layer components {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: hs1(var(--muted));
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background-color: hs1(var(--background)); 
+  }
+}
+.bg-noise {
+  background-image: url("/noise.svg");
+}
