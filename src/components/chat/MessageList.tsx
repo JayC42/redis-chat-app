@@ -1,17 +1,30 @@
-import { messages, USERS } from "@/db/dummy";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar } from "../ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
+import { useSelectedUser } from "@/store/useSelectedUser";
+import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { useQuery } from "@tanstack/react-query";
+import { getMessages } from "@/actions/message.actions";
 
 const MessageList = () => {
-  const selectedUser = USERS[0];
-  const currentUser = USERS[1];
+  const { selectedUser } = useSelectedUser();
+  const { user: currentUser, isLoading: isUserLoading } =
+    useKindeBrowserClient();
+  const { data: messages, isLoading } = useQuery({
+    queryKey: ["messages", selectedUser?.id],
+    queryFn: async () => {
+      if (selectedUser && currentUser) {
+        return await getMessages(selectedUser?.id, currentUser?.id);
+      }
+    },
+    enabled: !!selectedUser && !!currentUser && !UserLoading,
+  });
   return (
     <div className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col">
       {/* This component ensure that an animation is applied when items are added to or removed from the list*/}
       <AnimatePresence>
-        {messages.map((message, index) => (
+        {messages?.map((message, index) => (
           <motion.div
             key={index}
             layout
@@ -36,10 +49,10 @@ const MessageList = () => {
             )}
           >
             <div className="flex gap-3 items-center">
-              {message.senderId === selectedUser.id && (
+              {message.senderId === selectedUser?.id && (
                 <Avatar className="flex justify-center items-center">
                   <AvatarImage
-                    src={selectedUser.image}
+                    src={selectedUser?.image}
                     alt="User Image"
                     className="border-2 border-white rounded-full"
                   />
