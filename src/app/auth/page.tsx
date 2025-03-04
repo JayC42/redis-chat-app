@@ -2,8 +2,15 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import React from 'react'
 import AuthButtons from './AuthButtons'
+import  { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server'
+import { redirect } from 'next/navigation'
 
-const page = () => {
+const page = async() => {
+	// if user is already authenticated, redirect to home page
+  const { isAuthenticated } = getKindeServerSession(); 
+	if (await isAuthenticated()) {
+		return redirect("/");
+	}
   return (
     <div className='flex h-screen w-full'>
 			<div
@@ -50,3 +57,5 @@ const page = () => {
 }
 
 export default page
+
+
