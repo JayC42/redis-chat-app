@@ -6,25 +6,35 @@ import { useSelectedUser } from "@/store/useSelectedUser";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { getMessages } from "@/actions/message.actions";
+import { useEffect, useRef } from "react";
+import MessageSkeleton from "../skeletons/MessageSkeleton";
 
 const MessageList = () => {
   const { selectedUser } = useSelectedUser();
   const { user: currentUser, isLoading: isUserLoading } =
     useKindeBrowserClient();
-  const { data: messages, isLoading } = useQuery({
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const { data: messages, isLoading: isMessagesLoading } = useQuery({
     queryKey: ["messages", selectedUser?.id],
     queryFn: async () => {
       if (selectedUser && currentUser) {
         return await getMessages(selectedUser?.id, currentUser?.id);
       }
     },
-    enabled: !!selectedUser && !!currentUser && !UserLoading,
+    enabled: !!selectedUser && !!currentUser && !isUserLoading,
   });
+  // Scroll to bottom when new messages are added
+  useEffect(() => {
+    if(messageContainerRef.current){
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col">
+    <div ref={messageContainerRef} className="w-full overflow-y-auto overflow-x-hidden h-full flex flex-col">
       {/* This component ensure that an animation is applied when items are added to or removed from the list*/}
       <AnimatePresence>
-        {messages?.map((message, index) => (
+        {!isMessagesLoading && messages?.map((message, index) => (
           <motion.div
             key={index}
             layout
@@ -45,7 +55,7 @@ const MessageList = () => {
             }}
             className={cn(
               "flex flex-col gap-2 p-4 whitespace-pre-wrap",
-              message.senderId === currentUser.id ? "items-end" : "items-start"
+              message.senderId === currentUser?.id ? "items-end" : "items-start"
             )}
           >
             <div className="flex gap-3 items-center">
@@ -69,10 +79,10 @@ const MessageList = () => {
                   className="border p-2 rounded h-40 md:h-52 object-cover"
                 />
               )}
-              {message.senderId === currentUser.id && (
+              {message.senderId === currentUser?.id && (
                 <Avatar className="flex justify-center items-center">
                   <AvatarImage
-                    src={currentUser.image}
+                    src={currentUser?.picture || "/user-placeholder.png"}
                     alt="User Image"
                     className="border-2 border-white rounded-full"
                   />
@@ -81,6 +91,13 @@ const MessageList = () => {
             </div>
           </motion.div>
         ))}
+        {isMessagesLoading && (
+          <>
+          <MessageSkeleton />
+          <MessageSkeleton />
+          <MessageSkeleton />
+          </>
+        )}
       </AnimatePresence>
     </div>
   );
