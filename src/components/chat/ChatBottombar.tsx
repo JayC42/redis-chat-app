@@ -1,4 +1,6 @@
 import { CldUploadWidget, CloudinaryUploadWidgetInfo } from "next-cloudinary";
+import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { pusherClient } from "@/lib/pusher";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -8,12 +10,12 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { Textarea } from "../ui/textarea";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EmojiPicker from "./EmojiPicker";
 import { Button } from "../ui/button";
 import useSound from "use-sound";
 import { usePreferences } from "@/store/usePreferences";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendMessageAction } from "@/actions/message.actions";
 import { useSelectedUser } from "@/store/useSelectedUser";
 import {
@@ -23,14 +25,16 @@ import {
   DialogHeader,
 } from "../ui/dialog";
 import { DialogTitle } from "@radix-ui/react-dialog";
+import { Message } from "@/db/dummy";
 
 const ChatBottombar = () => {
+  const queryClient = useQueryClient()
   const [message, setMessage] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedUser } = useSelectedUser();
   const { soundEnabled } = usePreferences();
   const [imgUrl, setImgUrl] = useState("");
-
+  const { user:currentUser } = useKindeBrowserClient();
   const [playSound1] = useSound("/sounds/keystroke1.mp3");
   const [playSound2] = useSound("/sounds/keystroke2.mp3");
   const [playSound3] = useSound("/sounds/keystroke3.mp3");
@@ -66,6 +70,23 @@ const ChatBottombar = () => {
     }
   };
 
+  useEffect(() => {
+    const channelName = `${currentUser?.id}___${selectedUser?.id}`.split("__").sort().join("__");
+    const channel = pusherClient?.subscribe(channelName);
+    const handleNewMessage = (data:{message:Message}) => {
+      
+      queryClient.setQueryData(["messages", selectedUser?.id], (oldMessages: Message[]) => {
+        return [...oldMessages, data.message]
+      })
+    }
+    channel.bind("newMessage", handleNewMessage)
+
+    //cleanup event listeners when component unmounts
+    return () => {
+      channel.unbind("newMesssage", handleNewMessage)
+      pusherClient.unsubscribe(channelName)
+    }
+  },[currentUser?.id, selectedUser?.id, queryClient])
   return (
     <div className="p-2 flex justify-between w-full items-center gap-2">
       {!message.trim() && (
