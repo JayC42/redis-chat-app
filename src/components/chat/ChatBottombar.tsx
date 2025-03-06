@@ -39,6 +39,8 @@ const ChatBottombar = () => {
   const [playSound2] = useSound("/sounds/keystroke2.mp3");
   const [playSound3] = useSound("/sounds/keystroke3.mp3");
   const [playSound4] = useSound("/sounds/keystroke4.mp3");
+  const [playNotificationSound] = useSound("/sounds/notification.mp3");
+
   const playSoundFunctions = [playSound1, playSound2, playSound3, playSound4];
 
   const playRandomKeyStrokeSound = () => {
@@ -78,7 +80,10 @@ const ChatBottombar = () => {
       queryClient.setQueryData(["messages", selectedUser?.id], (oldMessages: Message[]) => {
         return [...oldMessages, data.message]
       })
-    }
+      if(soundEnabled && data.message.senderId !== currentUser?.id) {
+        playNotificationSound();
+      }
+    };
     channel.bind("newMessage", handleNewMessage)
 
     //cleanup event listeners when component unmounts
